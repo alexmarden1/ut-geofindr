@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Geospatial Data Finder — UT Libraries</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16191f;
+    --slate:#566370;
+    --paper:#e8ecef;
+    --surface:#ffffff;
+    --line:#d3dae0;
+    --orange:#bf5700;      /* UT burnt orange */
+    --orange-soft:#f7e8dc;
+    --orange-line:#e6c3a3;
+    --display:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"Space Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--body);line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;background:var(--ink);color:#fff;overflow:hidden}
+  .hero svg.topo{position:absolute;inset:0;width:100%;height:100%;opacity:.5;pointer-events:none}
+  .hero .wrap{position:relative;z-index:1;padding:52px 20px 40px}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:#c9d2da;margin:0 0 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap
+  }
+  .eyebrow .tick{width:22px;height:1px;background:var(--orange)}
+  h1{
+    font-family:var(--display);font-weight:800;font-size:clamp(30px,5.4vw,54px);
+    line-height:1.02;letter-spacing:-.02em;margin:0 0 14px;max-width:16ch
+  }
+  h1 em{font-style:normal;color:var(--orange)}
+  .lede{font-size:clamp(15px,2vw,18px);color:#d7dee4;max-width:56ch;margin:0 0 26px}
+
+  /* ---------- Search ---------- */
+  .search{position:relative;max-width:620px}
+  .search input{
+    width:100%;font-family:var(--body);font-size:16px;color:var(--ink);
+    padding:16px 46px 16px 46px;border:0;border-radius:var(--radius);
+    background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.28)
+  }
+  .search input:focus{outline:3px solid var(--orange);outline-offset:2px}
+  .search .icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--slate)}
+  .search .clear{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);
+    border:0;background:transparent;color:var(--slate);cursor:pointer;
+    font-size:20px;line-height:1;padding:6px;border-radius:8px;display:none
+  }
+  .search .clear:hover{color:var(--orange);background:var(--orange-soft)}
+  .search .clear:focus-visible{outline:2px solid var(--orange);outline-offset:2px;display:block}
+
+  /* ---------- Controls bar ---------- */
+  .controls{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--line)}
+  .controls .wrap{padding:14px 20px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .levels{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{
+    font-family:var(--mono);font-size:12px;letter-spacing:.03em;
+    border:1px solid var(--line);background:var(--surface);color:var(--slate);
+    padding:8px 13px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:.12s
+  }
+  .pill:hover{border-color:var(--orange-line);color:var(--ink)}
+  .pill[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:#fff}
+  .pill:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+  .disc{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .disc label{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate)}
+  .disc select{
+    font-family:var(--body);font-size:14px;color:var(--ink);background:var(--surface);
+    border:1px solid var(--line);border-radius:8px;padding:8px 30px 8px 12px;cursor:pointer;
+    appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23566370' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 11px center
+  }
+  .disc select:focus-visible{outline:2px solid var(--orange);outline-offset:1px}
+
+  /* ---------- Readout ---------- */
+  .readout{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+    padding:26px 0 6px;flex-wrap:wrap}
+  .readout .count{font-family:var(--mono);font-size:13px;color:var(--slate);letter-spacing:.02em}
+  .readout .count b{color:var(--orange)}
+  .readout .reset{font-family:var(--mono);font-size:12px;color:var(--slate);background:none;border:0;
+    cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+  .readout .reset:hover{color:var(--orange)}
+
+  /* ---------- Featured ---------- */
+  .featured{margin:8px 0 6px}
+  .featured h2{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--slate);margin:0 0 12px;font-weight:700}
+  .startgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+  .chip{
+    display:block;text-decoration:none;background:var(--ink);color:#fff;border-radius:10px;
+    padding:14px 15px;transition:.14s;border:1px solid var(--ink)
+  }
+  .chip:hover{transform:translateY(-2px);border-color:var(--orange)}
+  .chip .cn{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-.01em}
+  .chip .cd{font-family:var(--mono);font-size:11px;color:#aab4bd;margin-top:5px;letter-spacing:.02em}
+
+  /* ---------- Results grid ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:14px;padding:14px 0 60px}
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 16px 15px;display:flex;flex-direction:column;gap:9px;transition:.14s;position:relative
+  }
+  .card:hover{border-color:var(--orange-line);box-shadow:0 6px 22px rgba(22,25,31,.08)}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--slate);padding:3px 7px;border:1px solid var(--line);border-radius:6px;background:#fbfcfd}
+  .tag.lvl{color:var(--orange);border-color:var(--orange-line);background:var(--orange-soft)}
+  .tag.verify{color:#8a5a00;border-color:#e8cf9a;background:#fbf3e0}
+  .card h3{margin:0;font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;line-height:1.2}
+  .card h3 a{text-decoration:none}
+  .card h3 a::after{content:"↗";font-family:var(--mono);font-size:12px;color:var(--slate);margin-left:6px;vertical-align:1px}
+  .card h3 a:hover{color:var(--orange)}
+  .card h3 a:hover::after{color:var(--orange)}
+  .card h3 a:focus-visible{outline:2px solid var(--orange);outline-offset:3px;border-radius:3px}
+  .card p{margin:0;font-size:13.5px;color:#39424c}
+
+  /* ---------- Empty ---------- */
+  .empty{padding:40px 0 70px;text-align:center;color:var(--slate)}
+  .empty p{font-size:16px;margin:0 0 14px}
+  .empty button{font-family:var(--mono);font-size:13px;color:#fff;background:var(--orange);
+    border:0;border-radius:8px;padding:10px 18px;cursor:pointer}
+
+  /* ---------- Footer ---------- */
+  footer{border-top:1px solid var(--line);background:var(--surface)}
+  footer .wrap{padding:22px 20px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:11.5px;color:var(--slate);letter-spacing:.02em}
+  footer a{color:var(--orange)}
+
+  @media (max-width:640px){
+    .disc{margin-left:0;width:100%}
+    .disc select{flex:1}
+    .hero .wrap{padding:40px 20px 32px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}.chip:hover{transform:none}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="topo" viewBox="0 0 1120 320" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke-width="1.1">
+      <path stroke="#2b3038" d="M-40 60 C 200 20, 420 120, 620 70 S 1000 20, 1180 90"/>
+      <path stroke="#2b3038" d="M-40 100 C 220 60, 430 160, 640 110 S 1010 60, 1180 130"/>
+      <path stroke="#2b3038" d="M-40 140 C 240 100, 440 200, 660 150 S 1020 100, 1180 170"/>
+      <path stroke="#bf5700" stroke-opacity=".55" d="M-40 180 C 260 140, 450 240, 680 190 S 1030 140, 1180 210"/>
+      <path stroke="#2b3038" d="M-40 220 C 280 180, 470 280, 700 230 S 1040 180, 1180 250"/>
+      <path stroke="#2b3038" d="M-40 260 C 300 220, 490 320, 720 270 S 1050 220, 1180 290"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <p class="eyebrow"><span class="tick"></span> UT Libraries · GIS &amp; Geospatial Data Services</p>
+    <h1>Geospatial Data <em>Finder</em></h1>
+    <p class="lede">One place to find the right source — from Austin parcels to statewide lidar to national census and imagery. Search a keyword, or filter by level and discipline.</p>
+    <div class="search">
+      <span class="icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      </span>
+      <input id="q" type="search" autocomplete="off" placeholder="Search — try lidar, flood, census, parcels, imagery…" aria-label="Search data sources">
+      <button class="clear" id="clear" aria-label="Clear search">×</button>
+    </div>
+  </div>
+</header>
+
+<nav class="controls" aria-label="Filters">
+  <div class="wrap">
+    <div class="levels" id="levels" role="group" aria-label="Filter by level">
+      <button class="pill" data-level="all" aria-pressed="true">All levels</button>
+      <button class="pill" data-level="Austin &amp; Local" aria-pressed="false">Austin &amp; Local</button>
+      <button class="pill" data-level="Texas" aria-pressed="false">Texas</button>
+      <button class="pill" data-level="National" aria-pressed="false">National</button>
+      <button class="pill" data-level="Aggregators" aria-pressed="false">Aggregators</button>
+    </div>
+    <div class="disc">
+      <label for="disc">Discipline</label>
+      <select id="disc" aria-label="Filter by discipline"><option value="all">All disciplines</option></select>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div class="readout">
+    <p class="count" id="count" aria-live="polite"></p>
+    <button class="reset" id="reset" hidden>Reset filters</button>
+  </div>
+
+  <section class="featured" id="featured" aria-label="Start here">
+    <h2>Start here — the highest-traffic sources</h2>
+    <div class="startgrid" id="startgrid"></div>
+  </section>
+
+  <section class="grid" id="grid" aria-label="Data sources"></section>
+
+  <div class="empty" id="empty" hidden>
+    <p>No sources match that search.</p>
+    <button id="emptyReset">Reset filters</button>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Prototype · consolidates the Austin, Texas, U.S., and geoportal pages</span>
+    <span>Sources link to program home / download pages · report a broken link to <a href="mailto:gis@lib.utexas.edu">gis@lib.utexas.edu</a></span>
+  </div>
+</footer>
+
+<script>
+const DATA = [
+  // ---------- Aggregators / library geoportals ----------
+  {n:"Texas GeoData Portal (UT Libraries)",u:"https://geodata.lib.utexas.edu/",l:"Aggregators",d:"Cross-discipline",featured:true,desc:"UT's own geoportal: thousands of library and partner datasets and scanned maps, links maintained by staff.",kw:"geoblacklight library scanned maps perry castaneda benson vector"},
+  {n:"BTAA Geoportal",u:"https://geo.btaa.org/",l:"Aggregators",d:"Cross-discipline",desc:"Tens of thousands of curated records across many U.S. states; search by map or keyword.",kw:"big ten geoblacklight aggregator states"},
+  {n:"Stanford EarthWorks",u:"https://earthworks.stanford.edu/",l:"Aggregators",d:"Cross-discipline",desc:"Large academic geoportal in the same OpenGeoMetadata family as UT's and BTAA's.",kw:"stanford geoblacklight aggregator"},
+
+  // ---------- National · Base map & reference ----------
+  {n:"The National Map (USGS)",u:"https://www.usgs.gov/the-national-map-data-delivery/gis-data-download",l:"National",d:"Base map & reference",featured:true,desc:"Core U.S. base layers: elevation, hydrography, boundaries, structures, transportation, names.",kw:"usgs tnm base download topographic"},
+  {n:"Census TIGER/Line",u:"https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",l:"National",d:"Base map & reference",desc:"National boundaries, roads, water, and administrative geographies (shapefiles and geodatabases).",kw:"census boundaries roads geography shapefile"},
+  {n:"GeoPlatform / Data.gov",u:"https://www.geoplatform.gov/",l:"National",d:"Base map & reference",featured:true,desc:"Cross-agency federal catalog; filter by publisher to surface an agency's holdings.",kw:"federal catalog open data datagov"},
+  {n:"Natural Earth",u:"https://www.naturalearthdata.com/",l:"National",d:"Base map & reference",desc:"Public-domain small-scale base data for cartography.",kw:"cartography basemap global public domain"},
+  {n:"OpenStreetMap (Geofabrik)",u:"https://download.geofabrik.de/",l:"National",d:"Base map & reference",desc:"Current roads, buildings, and points of interest as regional extracts.",kw:"osm openstreetmap roads buildings poi extract"},
+
+  // ---------- National · Elevation ----------
+  {n:"USGS 3DEP",u:"https://www.usgs.gov/3d-elevation-program",l:"National",d:"Elevation & terrain",desc:"Digital elevation models and lidar point clouds via The National Map.",kw:"lidar dem elevation terrain point cloud"},
+  {n:"OpenTopography",u:"https://opentopography.org/",l:"National",d:"Elevation & terrain",desc:"High-resolution topography and lidar with easy area subsetting.",kw:"lidar dem elevation terrain topography"},
+
+  // ---------- National · Imagery ----------
+  {n:"USGS EarthExplorer",u:"https://earthexplorer.usgs.gov/",l:"National",d:"Imagery & remote sensing",featured:true,desc:"Landsat, aerial imagery, NAIP, and more.",kw:"landsat satellite aerial naip imagery remote sensing"},
+  {n:"NASA Earthdata Search",u:"https://search.earthdata.nasa.gov/",l:"National",d:"Imagery & remote sensing",desc:"Full NASA earth-observation archive.",kw:"nasa satellite remote sensing modis viirs"},
+  {n:"Copernicus Data Space (Sentinel)",u:"https://dataspace.copernicus.eu/",l:"National",d:"Imagery & remote sensing",desc:"Free EU Sentinel satellite imagery.",kw:"sentinel esa satellite imagery radar"},
+  {n:"NASA AVIRIS",u:"https://aviris.jpl.nasa.gov/dataportal/",l:"National",d:"Imagery & remote sensing",desc:"Airborne visible/infrared imaging spectrometer data.",kw:"hyperspectral imaging spectrometer"},
+
+  // ---------- National · Hydrology ----------
+  {n:"USGS NHD / WBD",u:"https://www.usgs.gov/national-hydrography",l:"National",d:"Hydrology & water",desc:"Streams, water bodies, and watershed boundaries via The National Map.",kw:"hydrography streams rivers watershed water"},
+  {n:"NOAA Digital Coast",u:"https://coast.noaa.gov/digitalcoast/data/",l:"National",d:"Hydrology & water",desc:"Coastal, shoreline, and coastal-elevation data.",kw:"coast shoreline coastal water noaa"},
+  {n:"HydroShare",u:"https://www.hydroshare.org/search/",l:"National",d:"Hydrology & water",desc:"Community-contributed hydrologic datasets and models.",kw:"hydrology water models community"},
+
+  // ---------- National · Climate ----------
+  {n:"NOAA NCEI",u:"https://www.ncei.noaa.gov/",l:"National",d:"Climate & weather",desc:"The national climate and weather data archive.",kw:"climate weather temperature precipitation noaa"},
+  {n:"PRISM Climate Group",u:"https://prism.oregonstate.edu/",l:"National",d:"Climate & weather",desc:"Gridded U.S. climate normals.",kw:"climate normals gridded temperature precipitation"},
+  {n:"NOAA SPC (SVRGIS)",u:"https://www.spc.noaa.gov/gis/svrgis/",l:"National",d:"Climate & weather",desc:"Severe weather and tornado track GIS data.",kw:"tornado hail wind severe storm"},
+  {n:"NOAA Severe Weather Data Inventory",u:"https://www.ncei.noaa.gov/access/severe-weather-data-inventory/",l:"National",d:"Climate & weather",desc:"Consolidated severe weather records.",kw:"severe weather storm inventory"},
+  {n:"NOAA National Hurricane Center",u:"https://www.nhc.noaa.gov/gis/",l:"National",d:"Climate & weather",desc:"Hurricane track and forecast GIS data.",kw:"hurricane tropical storm track"},
+
+  // ---------- National · Land cover & ag ----------
+  {n:"MRLC / NLCD",u:"https://www.mrlc.gov/",l:"National",d:"Land cover & agriculture",desc:"National Land Cover Database.",kw:"land cover nlcd impervious canopy"},
+  {n:"USDA CropScape",u:"https://nassgeodata.gmu.edu/CropScape/",l:"National",d:"Land cover & agriculture",desc:"Annual Cropland Data Layer (crop-type raster).",kw:"crops agriculture cdl cropland"},
+  {n:"USDA Forest Service — Tree Species Prevalence",u:"https://www.fs.usda.gov/rds/archive/catalog/RDS-2013-0013",l:"National",d:"Land cover & agriculture",desc:"Modeled tree species distribution, contiguous U.S.",kw:"trees forest species vegetation"},
+  {n:"USDA — Invasive Plant Species",u:"https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=Current+Invasive+Plants",l:"National",d:"Land cover & agriculture",desc:"Spatial distribution of invasive plants.",kw:"invasive plants vegetation weeds"},
+
+  // ---------- National · Soils ----------
+  {n:"USDA NRCS Web Soil Survey (SSURGO)",u:"https://websoilsurvey.nrcs.usda.gov/",l:"National",d:"Soils",desc:"Detailed U.S. soil survey data.",kw:"soil ssurgo nrcs survey"},
+
+  // ---------- National · Demographics ----------
+  {n:"data.census.gov",u:"https://data.census.gov/",l:"National",d:"Demographics & socioeconomic",featured:true,desc:"ACS and decennial data; pair with TIGER/Line for geometry.",kw:"census acs population demographics income"},
+  {n:"IPUMS NHGIS",u:"https://www.nhgis.org/",l:"National",d:"Demographics & socioeconomic",desc:"Historical census boundaries and tables, join-ready.",kw:"census historical boundaries population nhgis"},
+  {n:"HUD Open Data",u:"https://hudgis-hud.opendata.arcgis.com/",l:"National",d:"Demographics & socioeconomic",desc:"Housing and community development geography.",kw:"housing hud community development"},
+
+  // ---------- National · Health ----------
+  {n:"CDC PLACES",u:"https://www.cdc.gov/places/",l:"National",d:"Health",desc:"Model-based local health estimates.",kw:"health cdc places disease prevalence"},
+  {n:"CDC Environmental Public Health Tracking",u:"https://ephtracking.cdc.gov/",l:"National",d:"Health",desc:"Environmental health indicators and geography.",kw:"health environment tracking cdc"},
+
+  // ---------- National · Environment & ecology ----------
+  {n:"EPA EnviroAtlas",u:"https://www.epa.gov/enviroatlas/enviroatlas-data",l:"National",d:"Environment & ecology",desc:"Ecosystem services and environmental data.",kw:"epa ecosystem environment ecology"},
+  {n:"USGS PAD-US",u:"https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-download",l:"National",d:"Environment & ecology",desc:"Protected areas and public lands.",kw:"protected areas public lands parks conservation"},
+  {n:"NEON",u:"https://data.neonscience.org/data-products/explore",l:"National",d:"Environment & ecology",desc:"National Ecological Observatory Network data.",kw:"ecology observatory ecological"},
+  {n:"USGS ScienceBase",u:"https://www.sciencebase.gov/catalog/",l:"National",d:"Environment & ecology",desc:"Cross-program USGS research data catalog.",kw:"usgs research catalog science"},
+  {n:"USGS Mineral Resources",u:"https://mrdata.usgs.gov/",l:"National",d:"Environment & ecology",desc:"Mineral resources and geology data.",kw:"minerals geology mining mrdata"},
+  {n:"USGS Breeding Bird Survey",u:"https://www.pwrc.usgs.gov/bbs/",l:"National",d:"Environment & ecology",verify:true,desc:"Migratory bird survey data. Legacy pwrc.usgs.gov address — confirm before publishing.",kw:"birds wildlife survey migratory"},
+
+  // ---------- National · Transportation ----------
+  {n:"BTS National Transportation Atlas",u:"https://www.bts.gov/geospatial",l:"National",d:"Transportation & infrastructure",desc:"National transportation networks and facilities.",kw:"transportation roads rail transit bts"},
+  {n:"HIFLD Open (via Data.gov)",u:"https://catalog.data.gov/dataset?q=HIFLD",l:"National",d:"Transportation & infrastructure",desc:"Homeland infrastructure foundation-level data; host has moved, so a Data.gov search is durable.",kw:"infrastructure hifld critical facilities"},
+  {n:"Microsoft U.S. Building Footprints",u:"https://github.com/microsoft/USBuildingFootprints",l:"National",d:"Transportation & infrastructure",desc:"Machine-extracted building footprints for the U.S.",kw:"buildings footprints structures"},
+
+  // ---------- National · Hazards ----------
+  {n:"FEMA Flood Map Service Center",u:"https://msc.fema.gov/",l:"National",d:"Hazards & emergency management",desc:"Official flood hazard layers.",kw:"flood fema hazard floodplain"},
+  {n:"OpenFEMA",u:"https://www.fema.gov/about/openfema/data-sets",l:"National",d:"Hazards & emergency management",desc:"FEMA program and disaster datasets.",kw:"fema disaster emergency"},
+  {n:"USGS Earthquake Hazards",u:"https://earthquake.usgs.gov/",l:"National",d:"Hazards & emergency management",desc:"Seismic data, catalogs, and feeds.",kw:"earthquake seismic hazard"},
+
+  // ---------- National · Historical maps ----------
+  {n:"USGS topoView",u:"https://ngmdb.usgs.gov/topoview/",l:"National",d:"Historical & scanned maps",desc:"Historical USGS topographic maps.",kw:"historical topographic scanned maps"},
+  {n:"David Rumsey Map Collection",u:"https://www.davidrumsey.com/",l:"National",d:"Historical & scanned maps",desc:"Large collection of georeferenced historical maps.",kw:"historical maps rumsey georeferenced"},
+
+  // ---------- Texas ----------
+  {n:"Texas Geographic Information Office (TxGIO)",u:"https://data.geographic.texas.gov/",l:"Texas",d:"Base map & reference",featured:true,desc:"State clearinghouse: orthoimagery, elevation/lidar, historical aerials, parcels, address points. Formerly TNRIS.",kw:"txgio tnris statewide imagery lidar parcels stratmap"},
+  {n:"State of Texas Open Data",u:"https://data.texas.gov/",l:"Texas",d:"Base map & reference",desc:"Statewide open data portal across agencies.",kw:"texas open data statewide"},
+  {n:"Texas Water Development Board (TWDB)",u:"https://www.twdb.texas.gov/mapping/gisdata.asp",l:"Texas",d:"Hydrology & water",desc:"Hydrology, aquifers, water planning; see also the Flood Planning Hub.",kw:"water aquifer flood hydrology twdb"},
+  {n:"University Lands",u:"https://www.utlands.utsystem.edu/Resources/GIS",l:"Texas",d:"Base map & reference",desc:"UT System lands GIS data.",kw:"university lands ut system property"},
+  {n:"Railroad Commission of Texas (RRC)",u:"https://www.rrc.texas.gov/resource-center/research/data-sets-available-for-download/",l:"Texas",d:"Environment & ecology",desc:"Oil, gas, pipeline, and related geology data.",kw:"oil gas pipeline energy geology rrc"},
+  {n:"Texas General Land Office (GLO)",u:"https://glo-texas.opendata.arcgis.com/",l:"Texas",d:"Base map & reference",desc:"Coastal and land-management data.",kw:"land coastal glo property"},
+  {n:"Texas Parks and Wildlife (TPWD)",u:"https://tpwd.texas.gov/gis/#data",l:"Texas",d:"Environment & ecology",desc:"Ecology, land cover, and natural regions.",kw:"parks wildlife ecology land cover"},
+  {n:"Texas Demographic Center (TDC)",u:"https://demographics.texas.gov/Data/",l:"Texas",d:"Demographics & socioeconomic",desc:"State demographic estimates and projections.",kw:"demographics population projections texas"},
+  {n:"Texas Legislative Council (TLC)",u:"https://data.capitol.texas.gov/",l:"Texas",d:"Base map & reference",desc:"Districts and legislative geography.",kw:"districts redistricting boundaries legislative"},
+  {n:"Texas Department of Transportation (TxDOT)",u:"https://gis-txdot.opendata.arcgis.com/",l:"Texas",d:"Transportation & infrastructure",desc:"Roadways, functional classification, and transportation.",kw:"roads transportation txdot highways"},
+  {n:"Texas Commission on Environmental Quality (TCEQ)",u:"https://www.tceq.texas.gov/gis/download-tceq-gis-data",l:"Texas",d:"Environment & ecology",desc:"Environmental regulatory data.",kw:"environment regulatory tceq pollution"},
+  {n:"Bureau of Economic Geology (BEG)",u:"https://www.beg.utexas.edu/data-and-tools",l:"Texas",d:"Environment & ecology",desc:"Geology data and tools.",kw:"geology beg energy"},
+  {n:"Texas Health and Human Services (DSHS)",u:"https://www.dshs.texas.gov/chs/gis/GISservices.shtm",l:"Texas",d:"Health",verify:true,desc:"Health GIS services. Legacy /chs/gis path — confirm before publishing.",kw:"health dshs services"},
+
+  // ---------- Austin & Local ----------
+  {n:"City of Austin Open Data Portal",u:"https://data.austintexas.gov/",l:"Austin & Local",d:"Base map & reference",featured:true,desc:"Municipal datasets; the GIS section links straight to ArcGIS layers.",kw:"austin city municipal open data"},
+  {n:"Austin GeoHub",u:"https://geohub.austintexas.gov/",l:"Austin & Local",d:"Base map & reference",desc:"The city's geospatial hub and application gallery.",kw:"austin geohub city apps"},
+  {n:"Capital Area Council of Governments (CAPCOG)",u:"https://www.capcog.org/",l:"Austin & Local",d:"Base map & reference",verify:true,desc:"Regional data for the 10-county Austin area. Locate the current GIS data subpage.",kw:"capcog regional council governments"},
+  {n:"Travis County GIS",u:"https://geo.traviscountytx.gov/",l:"Austin & Local",d:"Base map & reference",desc:"County GIS services and data.",kw:"travis county gis"},
+  {n:"Travis Central Appraisal District (TCAD)",u:"https://www.traviscad.org/",l:"Austin & Local",d:"Base map & reference",desc:"Parcels and property boundaries.",kw:"parcels property appraisal tcad travis"}
+];
+
+// --- decode &amp; for level pills that came from HTML ---
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const grid=$("#grid"), featured=$("#featured"), startgrid=$("#startgrid"),
+      countEl=$("#count"), emptyEl=$("#empty"), qEl=$("#q"), clearBtn=$("#clear"),
+      discSel=$("#disc"), resetBtn=$("#reset");
+
+let state={q:"",level:"all",disc:"all"};
+
+// populate discipline dropdown in a sensible order
+const DISC_ORDER=["Base map & reference","Elevation & terrain","Imagery & remote sensing",
+  "Hydrology & water","Climate & weather","Land cover & agriculture","Soils",
+  "Demographics & socioeconomic","Health","Environment & ecology",
+  "Transportation & infrastructure","Hazards & emergency management",
+  "Historical & scanned maps","Cross-discipline"];
+DISC_ORDER.forEach(d=>{
+  if(DATA.some(x=>x.d===d)){
+    const o=document.createElement("option");o.value=d;o.textContent=d;discSel.appendChild(o);
+  }
+});
+
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+function match(x){
+  if(state.level!=="all" && x.l!==state.level) return false;
+  if(state.disc!=="all" && x.d!==state.disc) return false;
+  if(state.q){
+    const hay=(x.n+" "+x.desc+" "+x.d+" "+x.l+" "+(x.kw||"")).toLowerCase();
+    return state.q.toLowerCase().split(/\s+/).every(t=>hay.includes(t));
+  }
+  return true;
+}
+
+function card(x){
+  const verify=x.verify?'<span class="tag verify">verify link</span>':"";
+  return `<article class="card">
+    <div class="tags"><span class="tag lvl">${esc(x.l)}</span><span class="tag">${esc(x.d)}</span>${verify}</div>
+    <h3><a href="${x.u}" target="_blank" rel="noopener">${esc(x.n)}</a></h3>
+    <p>${esc(x.desc)}</p>
+  </article>`;
+}
+
+function render(){
+  const isDefault = !state.q && state.level==="all" && state.disc==="all";
+  const rows=DATA.filter(match);
+
+  // featured strip only in default view
+  if(isDefault){
+    featured.hidden=false;
+    startgrid.innerHTML=DATA.filter(x=>x.featured).map(x=>
+      `<a class="chip" href="${x.u}" target="_blank" rel="noopener"><span class="cn">${esc(x.n)}</span><span class="cd">${esc(x.l)} · ${esc(x.d)}</span></a>`
+    ).join("");
+  }else{
+    featured.hidden=true;
+  }
+
+  grid.innerHTML=rows.map(card).join("");
+  emptyEl.hidden=rows.length>0;
+  grid.hidden=rows.length===0;
+
+  countEl.innerHTML = isDefault
+    ? `Showing all <b>${DATA.length}</b> sources`
+    : `<b>${rows.length}</b> of ${DATA.length} sources`;
+  resetBtn.hidden=isDefault;
+  clearBtn.style.display=state.q?"block":"none";
+}
+
+// events
+qEl.addEventListener("input",e=>{state.q=e.target.value.trim();render()});
+clearBtn.addEventListener("click",()=>{state.q="";qEl.value="";qEl.focus();render()});
+qEl.addEventListener("keydown",e=>{if(e.key==="Escape"){state.q="";qEl.value="";render()}});
+discSel.addEventListener("change",e=>{state.disc=e.target.value;render()});
+$$("#levels .pill").forEach(p=>p.addEventListener("click",()=>{
+  const raw=p.getAttribute("data-level");
+  const lvl=raw.replace(/&amp;/g,"&");
+  state.level = (state.level===lvl)?"all":lvl;
+  $$("#levels .pill").forEach(b=>{
+    const bl=b.getAttribute("data-level").replace(/&amp;/g,"&");
+    b.setAttribute("aria-pressed", (bl===state.level)||(state.level==="all"&&bl==="all") ? "true":"false");
+  });
+  if(state.level==="all") $$("#levels .pill")[0].setAttribute("aria-pressed","true");
+  render();
+}));
+function resetAll(){state={q:"",level:"all",disc:"all"};qEl.value="";discSel.value="all";
+  $$("#levels .pill").forEach((b,i)=>b.setAttribute("aria-pressed",i===0?"true":"false"));render();qEl.focus();}
+resetBtn.addEventListener("click",resetAll);
+$("#emptyReset").addEventListener("click",resetAll);
+
+render();
+</script>
+</body>
+</html>
